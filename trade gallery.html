@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Gallery</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+
+    .dark-mode {
+      background-color: #121212;
+      color: white;
+    }
+
+    .navbar {
+      background-color: #333;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .navbar a {
+      margin: 0 15px;
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #FF6347;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 10px;
+      padding: 20px;
+    }
+
+    .image-item img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .image-item p {
+      text-align: center;
+      font-size: 14px;
+      color: #ccc;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    input[type="file"], input[type="text"] {
+      padding: 10px;
+      margin: 10px 0;
+      width: 100%;
+      border-radius: 5px;
+    }
+
+    .login-container {
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    .login-container input {
+      padding: 10px;
+      width: 200px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+
+    .login-container button {
+      padding: 10px 20px;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: white;
+      cursor: pointer;
+    }
+
+    .login-container button:hover {
+      background-color: #0056b3;
+    }
+
+    .upload-container {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .upload-container input[type="file"] {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body class="dark-mode">
+
+  <!-- Login Page -->
+  <div class="login-container" id="loginPage">
+    <h2>Login</h2>
+    <input type="password" id="password" placeholder="Enter Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Gallery Page -->
+  <div class="container" id="galleryPage" style="display: none;">
+    <div class="navbar">
+      <a href="#" onclick="showUploadPage()">Upload Image</a>
+      <a href="#" onclick="showTradesPage()">Trades Executed</a>
+    </div>
+
+    <h1>Gallery</h1>
+    <div class="image-grid" id="imageGrid">
+      <!-- Dynamic Image Items -->
+    </div>
+  </div>
+
+  <!-- Upload Page -->
+  <div class="container" id="uploadPage" style="display: none;">
+    <div class="navbar">
+      <a href="#" onclick="showGalleryPage()">Back to Gallery</a>
+    </div>
+
+    <div class="upload-container">
+      <h1>Upload Image</h1>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="fileInput" required>
+        <input type="text" id="descriptionInput" placeholder="Description" required>
+        <button type="submit">Upload</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Trades Page -->
+  <div class="container" id="tradesPage" style="display: none;">
+    <div class="navbar">
+      <a href="#" onclick="showGalleryPage()">Back to Gallery</a>
+    </div>
+
+    <h1>Trades Executed</h1>
+    <div class="image-grid" id="tradeImages">
+      <!-- Uploaded trade images will appear here -->
+    </div>
+  </div>
+
+  <script>
+    const password = "Sungj1nwoo@";
+    const uploadedImages = [];
+
+    // Login function
+    function login() {
+      const enteredPassword = document.getElementById('password').value;
+      if (enteredPassword === password) {
+        showGalleryPage();
+      } else {
+        alert('Incorrect password!');
+      }
+    }
+
+    // Show Gallery Page
+    function showGalleryPage() {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('galleryPage').style.display = 'block';
+      document.getElementById('uploadPage').style.display = 'none';
+      document.getElementById('tradesPage').style.display = 'none';
+      loadGallery();
+    }
+
+    // Show Upload Page
+    function showUploadPage() {
+      document.getElementById('galleryPage').style.display = 'none';
+      document.getElementById('uploadPage').style.display = 'block';
+      document.getElementById('tradesPage').style.display = 'none';
+    }
+
+    // Show Trades Page
+    function showTradesPage() {
+      document.getElementById('galleryPage').style.display = 'none';
+      document.getElementById('uploadPage').style.display = 'none';
+      document.getElementById('tradesPage').style.display = 'block';
+      loadTrades();
+    }
+
+    // Load Gallery
+    function loadGallery() {
+      const imageGrid = document.getElementById('imageGrid');
+      imageGrid.innerHTML = '';
+      uploadedImages.forEach((img, index) => {
+        const imgElement = document.createElement('div');
+        imgElement.classList.add('image-item');
+        imgElement.innerHTML = `
+          <img src="${img.src}" alt="Trade Image" onclick="viewImage('${img.src}', '${img.description}')">
+          <p>${img.description}</p>
+        `;
+        imageGrid.appendChild(imgElement);
+      });
+    }
+
+    // Load Trades
+    function loadTrades() {
+      const tradeImages = document.getElementById('tradeImages');
+      tradeImages.innerHTML = '';
+      uploadedImages.forEach((img, index) => {
+        const imgElement = document.createElement('div');
+        imgElement.classList.add('image-item');
+        imgElement.innerHTML = `
+          <img src="${img.src}" alt="Uploaded Trade Image">
+          <p>${img.description}</p>
+        `;
+        tradeImages.appendChild(imgElement);
+      });
+    }
+
+    // View Image in Full Screen
+    function viewImage(src, description) {
+      alert(`${description}: ${src}`);
+    }
+
+    // Handle Image Upload
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const file = document.getElementById('fileInput').files[0];
+      const description = document.getElementById('descriptionInput').value;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        uploadedImages.push({
+          src: event.target.result,
+          description: description
+        });
+        alert('Image uploaded successfully!');
+        showGalleryPage();
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
+
+</body>
+</html>
