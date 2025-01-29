@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Secure Image Gallery</title>
   <style>
-    /* Styles here (same as in your original code) */
+    /* Styles here */
   </style>
   <!-- Firebase SDK -->
   <script type="module">
@@ -28,110 +28,146 @@
 
     let uploadedImages = [];
 
-    // Securely validate login
-    window.login = function () {
-      const enteredPassword = document.getElementById('password').value;
-      const loginError = document.getElementById('loginError');
-      loginError.textContent = '';
-
-      if (enteredPassword === "Sungj1nwoo@") {
-        showGalleryPage();
-      } else {
-        loginError.textContent = 'Incorrect password!';
-      }
-    };
-
-    // Show specific page
-    window.showGalleryPage = function () {
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('galleryPage').style.display = 'block';
-      document.getElementById('uploadPage').style.display = 'none';
-      document.getElementById('tradesPage').style.display = 'none';
-      loadGallery();
-    };
-
-    window.showUploadPage = function () {
-      document.getElementById('galleryPage').style.display = 'none';
-      document.getElementById('uploadPage').style.display = 'block';
-      document.getElementById('tradesPage').style.display = 'none';
-    };
-
-    window.showTradesPage = function () {
-      document.getElementById('galleryPage').style.display = 'none';
-      document.getElementById('uploadPage').style.display = 'none';
-      document.getElementById('tradesPage').style.display = 'block';
-      loadTrades();
-    };
-
-    // Load images dynamically
-    function loadGallery() {
-      const imageGrid = document.getElementById('imageGrid');
-      imageGrid.innerHTML = '';
-      uploadedImages.forEach(img => {
-        const imgElement = document.createElement('div');
-        imgElement.classList.add('image-item');
-        imgElement.innerHTML = `
-          <img src="${img.src}" alt="${img.description}" title="${img.description}" onclick="viewImage('${img.src}', '${img.description}')">
-          <p>${img.description}</p>
-        `;
-        imageGrid.appendChild(imgElement);
-      });
-    }
-
-    function loadTrades() {
-      const tradeImages = document.getElementById('tradeImages');
-      tradeImages.innerHTML = '';
-      uploadedImages.forEach(img => {
-        const imgElement = document.createElement('div');
-        imgElement.classList.add('image-item');
-        imgElement.innerHTML = `
-          <img src="${img.src}" alt="${img.description}">
-          <p>${img.description}</p>
-        `;
-        tradeImages.appendChild(imgElement);
-      });
-    }
-
-    // Handle uploads
     document.addEventListener("DOMContentLoaded", () => {
-      const uploadForm = document.getElementById('uploadForm');
-      uploadForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const file = document.getElementById('fileInput').files[0];
-        const description = document.getElementById('descriptionInput').value.trim();
-        const uploadError = document.getElementById('uploadError');
-        uploadError.textContent = '';
+      console.log("DOM fully loaded");
 
-        if (!file || !description) {
-          uploadError.textContent = 'Both file and description are required.';
-          return;
-        }
+      // Secure login validation
+      window.login = function () {
+        const enteredPassword = document.getElementById('password').value;
+        const loginError = document.getElementById('loginError');
+        loginError.textContent = '';
 
-        try {
-          const fileRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
-          await uploadBytes(fileRef, file);
-          const downloadURL = await getDownloadURL(fileRef);
-
-          uploadedImages.push({
-            src: downloadURL,
-            description
-          });
-
-          alert('Image uploaded successfully!');
+        if (enteredPassword === "Sungj1nwoo@") {
           showGalleryPage();
-        } catch (error) {
-          uploadError.textContent = 'Upload failed. Please try again.';
-          console.error('Error uploading file:', error);
+        } else {
+          loginError.textContent = 'Incorrect password!';
         }
-      });
-    });
+      };
 
-    window.viewImage = function (src, description) {
-      alert(`${description}: ${src}`);
-    };
+      // Show specific pages
+      window.showGalleryPage = function () {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('galleryPage').style.display = 'block';
+        document.getElementById('uploadPage').style.display = 'none';
+        document.getElementById('tradesPage').style.display = 'none';
+        loadGallery();
+      };
+
+      window.showUploadPage = function () {
+        document.getElementById('galleryPage').style.display = 'none';
+        document.getElementById('uploadPage').style.display = 'block';
+        document.getElementById('tradesPage').style.display = 'none';
+      };
+
+      window.showTradesPage = function () {
+        document.getElementById('galleryPage').style.display = 'none';
+        document.getElementById('uploadPage').style.display = 'none';
+        document.getElementById('tradesPage').style.display = 'block';
+        loadTrades();
+      };
+
+      // Load images dynamically
+      function loadGallery() {
+        const imageGrid = document.getElementById('imageGrid');
+        if (!imageGrid) return;
+        imageGrid.innerHTML = '';
+        uploadedImages.forEach(img => {
+          const imgElement = document.createElement('div');
+          imgElement.classList.add('image-item');
+          imgElement.innerHTML = `
+            <img src="${img.src}" alt="${img.description}" title="${img.description}" onclick="viewImage('${img.src}', '${img.description}')">
+            <p>${img.description}</p>
+          `;
+          imageGrid.appendChild(imgElement);
+        });
+      }
+
+      function loadTrades() {
+        const tradeImages = document.getElementById('tradeImages');
+        if (!tradeImages) return;
+        tradeImages.innerHTML = '';
+        uploadedImages.forEach(img => {
+          const imgElement = document.createElement('div');
+          imgElement.classList.add('image-item');
+          imgElement.innerHTML = `
+            <img src="${img.src}" alt="${img.description}">
+            <p>${img.description}</p>
+          `;
+          tradeImages.appendChild(imgElement);
+        });
+      }
+
+      // Handle uploads
+      const uploadForm = document.getElementById('uploadForm');
+      if (uploadForm) {
+        uploadForm.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          const fileInput = document.getElementById('fileInput');
+          const descriptionInput = document.getElementById('descriptionInput');
+          const uploadError = document.getElementById('uploadError');
+
+          if (!fileInput || !descriptionInput || !uploadError) return;
+
+          uploadError.textContent = '';
+          const file = fileInput.files[0];
+          const description = descriptionInput.value.trim();
+
+          if (!file || !description) {
+            uploadError.textContent = 'Both file and description are required.';
+            return;
+          }
+
+          try {
+            const fileRef = ref(storage, uploads/${Date.now()}_${file.name});
+            await uploadBytes(fileRef, file);
+            const downloadURL = await getDownloadURL(fileRef);
+
+            uploadedImages.push({
+              src: downloadURL,
+              description
+            });
+
+            alert('Image uploaded successfully!');
+            showGalleryPage();
+          } catch (error) {
+            uploadError.textContent = 'Upload failed. Please try again.';
+            console.error('Error uploading file:', error);
+          }
+        });
+      }
+
+      window.viewImage = function (src, description) {
+        alert(${description}: ${src});
+      };
+    });
   </script>
 </head>
 <body>
-  <!-- HTML structure here (same as your original code) -->
+  <div id="loginPage">
+    <input type="password" id="password" placeholder="Enter Password">
+    <button onclick="login()">Login</button>
+    <p id="loginError" style="color: red;"></p>
+  </div>
+
+  <div id="galleryPage" style="display: none;">
+    <button onclick="showUploadPage()">Upload Image</button>
+    <button onclick="showTradesPage()">Trades</button>
+    <div id="imageGrid"></div>
+  </div>
+
+  <div id="uploadPage" style="display: none;">
+    <button onclick="showGalleryPage()">Back to Gallery</button>
+    <form id="uploadForm">
+      <input type="file" id="fileInput">
+      <input type="text" id="descriptionInput" placeholder="Description">
+      <button type="submit">Upload</button>
+    </form>
+    <p id="uploadError" style="color: red;"></p>
+  </div>
+
+  <div id="tradesPage" style="display: none;">
+    <button onclick="showGalleryPage()">Back to Gallery</button>
+    <div id="tradeImages"></div>
+  </div>
 </body>
 </html>
