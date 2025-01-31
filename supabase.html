@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Charts Archive</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary: #2a2e35;
+            --secondary: #1e2126;
+            --accent: #00c896;
+            --text: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--primary);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Auth Section */
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+        }
+
+        .auth-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-card h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--accent);
+            font-size: 2em;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+        }
+
+        .auth-form button {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .auth-form button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* App Content */
+        .app-content {
+            display: none;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .upload-section {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .upload-section h2 {
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .file-input input[type="file"] {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input label {
+            display: block;
+            padding: 12px;
+            background: var(--accent);
+            color: white;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input label:hover {
+            opacity: 0.9;
+        }
+
+        #commentInput {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 5px;
+            color: white;
+        }
+
+        /* Gallery */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: var(--secondary);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            transition: transform 0.3s;
+        }
+
+        .chart-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .chart-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .comment {
+            margin-bottom: 10px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .timestamp {
+            font-size: 0.8em;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--accent);
+            font-size: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container" id="authSection">
+        <div class="auth-card">
+            <h1>Trading Archive</h1>
+            <div class="auth-form">
+                <input type="email" id="emailInput" placeholder="Email">
+                <input type="password" id="passwordInput" placeholder="Password">
+                <button onclick="login()">Login</button>
+                <p style="text-align: center; margin: 15px 0; opacity: 0.7;">or</p>
+                <button onclick="register()">Create Account</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container app-content" id="appContent">
+        <div class="header">
+            <h2>Chart Archive</h2>
+            <div class="user-info">
+                <span id="userEmail" style="margin-right: 15px;"></span>
+                <button onclick="logout()" class="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <h2>Upload New Chart</h2>
+            <div class="file-input">
+                <input type="file" id="imageInput" accept="image/*">
+                <label for="imageInput">Choose Chart Image</label>
+            </div>
+            <input type="text" id="commentInput" placeholder="Analysis comment...">
+            <button onclick="uploadChart()" class="upload-btn">Upload Chart</button>
+        </div>
+
+        <div class="loading" id="loading">Loading...</div>
+        <div id="gallery" class="gallery"></div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const supabase = supabase.createClient(
+            'https://snykjjyexfcnsrpahxrc.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNueWtqanlleGZjbnNycGFoeHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMTEwNzksImV4cCI6MjA1Mzg4NzA3OX0.VfneGs7pY4XWot2kKGICCj2D0Tv-PS6zq_tbZaipB0E'
+        );
+
+        // Auth state listener
+        supabase.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+                document.getElementById('userEmail').textContent = session.user.email;
+                loadSavedCharts();
+            } else {
+                document.getElementById('authSection').style.display = 'flex';
+                document.getElementById('appContent').style.display = 'none';
+            }
+        });
+
+        // Keep existing JavaScript functions unchanged (uploadChart, loadSavedCharts, deleteChart, etc.)
+        // ... [Rest of your JavaScript code remains the same] ...
+
+    </script>
+</body>
+</html>
