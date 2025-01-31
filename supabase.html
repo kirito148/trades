@@ -1,265 +1,444 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trading Charts Archive</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        :root {
-            --primary: #2a2e35;
-            --secondary: #1e2126;
-            --accent: #00c896;
-            --text: #ffffff;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Gallery</title>
+  <link href="https://unpkg.com/loading.io/css/spinner.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --dark: #1e1e1e;
+      --light: #f8fafc;
+      --success: #22c55e;
+      --error: #ef4444;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', sans-serif;
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        body {
-            background: var(--primary);
-            color: var(--text);
-            min-height: 100vh;
-        }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background-color: var(--dark);
+      color: var(--light);
+      line-height: 1.6;
+    }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
 
-        /* Auth Section */
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-        }
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.8);
+      padding: 1rem;
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-        .auth-card {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            width: 100%;
-            max-width: 400px;
-        }
+    .nav-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
 
-        .auth-card h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: var(--accent);
-            font-size: 2em;
-        }
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+    }
 
-        .auth-form input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 20px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 5px;
-            color: white;
-            font-size: 16px;
-        }
+    .nav-links a {
+      color: var(--light);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
 
-        .auth-form button {
-            width: 100%;
-            padding: 12px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
+    .nav-links a:hover {
+      color: var(--primary);
+    }
 
-        .auth-form button:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 2rem;
+      padding: 2rem 0;
+    }
 
-        /* App Content */
-        .app-content {
-            display: none;
-        }
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
 
-        .upload-section {
-            background: var(--secondary);
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
+    .card:hover {
+      transform: translateY(-5px);
+    }
 
-        .file-input {
-            position: relative;
-            margin-bottom: 15px;
-        }
+    .card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
 
-        .file-input input[type="file"] {
-            opacity: 0;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            cursor: pointer;
-        }
+    .card-content {
+      padding: 1rem;
+    }
 
-        .file-input label {
-            display: block;
-            padding: 12px;
-            background: var(--accent);
-            color: white;
-            border-radius: 5px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
 
-        .file-input label:hover {
-            opacity: 0.9;
-        }
+    .modal-content {
+      background: var(--dark);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 800px;
+      width: 90%;
+      position: relative;
+    }
 
-        #commentInput {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 5px;
-            color: white;
-        }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      color: var(--light);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
 
-        /* Loading Spinner */
-        .loading {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--accent);
-            font-size: 1.5em;
-        }
-    </style>
+    .upload-form {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2rem;
+      border-radius: 12px;
+      max-width: 600px;
+      margin: 2rem auto;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 0.8rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      color: var(--light);
+      font-size: 1rem;
+    }
+
+    button {
+      background: var(--primary);
+      color: var(--light);
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .loader {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--primary);
+      color: white;
+      padding: 1rem 2rem;
+      border-radius: 6px;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .nav-links {
+        gap: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
-
-    <!-- Auth Section -->
-    <div class="auth-container" id="authSection">
-        <div class="auth-card">
-            <h1>Trading Archive</h1>
-            <div class="auth-form">
-                <input type="email" id="emailInput" placeholder="Email">
-                <input type="password" id="passwordInput" placeholder="Password">
-                <button onclick="login()">Login</button>
-                <p style="text-align: center; margin: 15px 0; opacity: 0.7;">or</p>
-                <button onclick="register()">Create Account</button>
-            </div>
+  <!-- Login Modal -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content">
+      <h2>Admin Login</h2>
+      <form id="loginForm">
+        <div class="form-group">
+          <input type="password" id="password" placeholder="Enter Password" required>
         </div>
+        <button type="submit">Login</button>
+      </form>
     </div>
+  </div>
 
-    <!-- App Content (Upload Section) -->
-    <div class="container app-content" id="appContent">
-        <div class="upload-section">
-            <h2>Upload New Chart</h2>
-            <div class="file-input">
-                <input type="file" id="imageInput" accept="image/*">
-                <label for="imageInput">Choose Chart Image</label>
-            </div>
-            <input type="text" id="commentInput" placeholder="Analysis comment...">
-            <button onclick="uploadChart()">Upload Chart</button>
+  <!-- Main Content -->
+  <div id="mainContent" style="display: none;">
+    <nav class="navbar">
+      <div class="nav-content">
+        <h1>Trade Gallery</h1>
+        <div class="nav-links">
+          <a href="#" onclick="showSection('gallery')">Gallery</a>
+          <a href="#" onclick="showSection('upload')">Upload</a>
+          <a href="#" onclick="showSection('trades')">Trades</a>
+          <a href="#" onclick="logout()">Logout</a>
         </div>
-        <div class="loading" id="loading">Loading...</div>
+      </div>
+    </nav>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="container">
+      <div class="grid" id="galleryGrid"></div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="upload" class="container" style="display: none;">
+      <form id="uploadForm" class="upload-form">
+        <div class="form-group">
+          <input type="file" id="imageInput" accept="image/*" required>
+        </div>
+        <div class="form-group">
+          <textarea id="descriptionInput" placeholder="Trade description" required></textarea>
+        </div>
+        <button type="submit">Upload Trade</button>
+      </form>
+    </section>
+
+    <!-- Trades Section -->
+    <section id="trades" class="container" style="display: none;">
+      <div class="grid" id="tradesGrid"></div>
+    </section>
+  </div>
+
+  <!-- Image Preview Modal -->
+  <div id="imageModal" class="modal">
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+      <img id="modalImage" style="width: 100%; border-radius: 8px;">
+      <p id="modalDescription" class="mt-2 text-center"></p>
     </div>
+  </div>
 
-    <script>
-        // Supabase configuration
-        const supabase = supabase.createClient(
-            'https://snykjjyexfcnsrpahxrc.supabase.co', // Replace with your Supabase URL
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNueWtqanlleGZjbnNycGFoeHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMTEwNzksImV4cCI6MjA1Mzg4NzA3OX0.VfneGs7pY4XWot2kKGICCj2D0Tv-PS6zq_tbZaipB0E' // Replace with your Supabase anon key
-        );
+  <div id="loader" class="loader ldio-spinner">
+    <div class="ldio-cn5o6y9qjwd">
+      <div></div><div></div><div></div><div></div>
+    </div>
+  </div>
 
-        // Auth state listener
-        supabase.auth.onAuthStateChange((event, session) => {
-            if (session?.user) {
-                document.getElementById('authSection').style.display = 'none';
-                document.getElementById('appContent').style.display = 'block';
-            } else {
-                document.getElementById('authSection').style.display = 'flex';
-                document.getElementById('appContent').style.display = 'none';
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://snykjjyexfcnsrpahxrc.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNueWtqanlleGZjbnNycGFoeHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMTEwNzksImV4cCI6MjA1Mzg4NzA3OX0.VfneGs7pY4XWot2kKGICCj2D0Tv-PS6zq_tbZaipB0E';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkSession();
+    });
+
+    async function checkSession() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        currentUser = user;
+        showMainContent();
+        loadGallery();
+      } else {
+        showLoginModal();
+      }
+    }
+
+    async function handleLogin(password) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'admin@example.com',
+        password: password
+      });
+
+      if (error) {
+        showToast('Login failed: ' + error.message, 'error');
+        return;
+      }
+
+      currentUser = data.user;
+      showMainContent();
+      loadGallery();
+    }
+
+    async function logout() {
+      const { error } = await supabase.auth.signOut();
+      currentUser = null;
+      showLoginModal();
+    }
+
+    async function loadGallery() {
+      showLoader();
+      try {
+        const { data, error } = await supabase
+          .from('trades')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        renderGallery(data);
+      } catch (error) {
+        showToast('Error loading gallery: ' + error.message, 'error');
+      } finally {
+        hideLoader();
+      }
+    }
+
+    async function uploadTrade(file, description) {
+      showLoader();
+      try {
+        // Upload image to storage
+        const fileName = ${Date.now()}-${file.name};
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('trade-images')
+          .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const { data: urlData } = await supabase.storage
+          .from('trade-images')
+          .getPublicUrl(fileName);
+
+        // Save trade to database
+        const { data: dbData, error: dbError } = await supabase
+          .from('trades')
+          .insert([
+            { 
+              image_url: urlData.publicUrl,
+              description: description,
+              user_id: currentUser.id 
             }
-        });
+          ]);
 
-        // Login function
-        async function login() {
-            const email = document.getElementById('emailInput').value;
-            const password = document.getElementById('passwordInput').value;
+        if (dbError) throw dbError;
 
-            if (!email || !password) {
-                alert("Please enter both email and password.");
-                return;
-            }
+        showToast('Trade uploaded successfully!');
+        loadGallery();
+        showSection('gallery');
+      } catch (error) {
+        showToast('Upload failed: ' + error.message, 'error');
+      } finally {
+        hideLoader();
+      }
+    }
 
-            // Log in the user
-            const { user, error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+    function renderGallery(trades) {
+      const galleryGrid = document.getElementById('galleryGrid');
+      galleryGrid.innerHTML = trades.map(trade => `
+        <div class="card" onclick="showTradeModal('${trade.image_url}', '${trade.description}')">
+          <img src="${trade.image_url}" alt="Trade image">
+          <div class="card-content">
+            <p>${trade.description}</p>
+          </div>
+        </div>
+      `).join('');
+    }
 
-            if (error) {
-                alert('Login failed: ' + error.message);
-            } else {
-                // Hide login form and show the app content
-                document.getElementById('authSection').style.display = 'none';
-                document.getElementById('appContent').style.display = 'block';
-            }
-        }
+    // UI Helpers
+    function showLoader() {
+      document.getElementById('loader').style.display = 'block';
+    }
 
-        // Upload chart function
-        async function uploadChart() {
-            const fileInput = document.getElementById('imageInput');
-            const commentInput = document.getElementById('commentInput');
+    function hideLoader() {
+      document.getElementById('loader').style.display = 'none';
+    }
 
-            if (!fileInput.files[0] || !commentInput.value) {
-                alert("Please select a chart image and add a comment.");
-                return;
-            }
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.backgroundColor = type === 'error' ? var(--error) : var(--success);
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 3000);
+    }
 
-            const file = fileInput.files[0];
-            const fileName = `chart_${Date.now()}`;
-            
-            // Upload file to Supabase Storage (replace with your bucket)
-            const { data, error } = await supabase.storage
-                .from('charts')
-                .upload(fileName, file);
+    function showSection(sectionId) {
+      document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+      document.getElementById(sectionId).style.display = 'block';
+    }
 
-            if (error) {
-                alert('Error uploading chart: ' + error.message);
-                return;
-            }
+    function showTradeModal(imageUrl, description) {
+      const modal = document.getElementById('imageModal');
+      document.getElementById('modalImage').src = imageUrl;
+      document.getElementById('modalDescription').textContent = description;
+      modal.style.display = 'flex';
+    }
 
-            const { data: urlData } = await supabase
-                .storage
-                .from('charts')
-                .getPublicUrl(fileName);
+    function closeModal() {
+      document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+    }
 
-            const { error: insertError } = await supabase
-                .from('charts')
-                .insert([
-                    { image_url: urlData.publicURL, comment: commentInput.value }
-                ]);
+    // Event Listeners
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('imageInput').files[0];
+      const description = document.getElementById('descriptionInput').value;
+      await uploadTrade(file, description);
+    });
 
-            if (insertError) {
-                alert('Error saving chart info: ' + insertError.message);
-            } else {
-                alert('Chart uploaded successfully!');
-            }
-        }
-    </script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      await handleLogin(password);
+    });
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+      if (event.target.className === 'modal') {
+        closeModal();
+      }
+    };
+  </script>
 </body>
 </html>
