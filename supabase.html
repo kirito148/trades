@@ -90,25 +90,11 @@
             display: none;
         }
 
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            padding: 20px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
         .upload-section {
             background: var(--secondary);
             padding: 20px;
             border-radius: 10px;
             margin-bottom: 30px;
-        }
-
-        .upload-section h2 {
-            color: var(--accent);
-            margin-bottom: 15px;
         }
 
         .file-input {
@@ -149,58 +135,7 @@
             color: white;
         }
 
-        /* Gallery */
-        .gallery {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .chart-card {
-            background: var(--secondary);
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-            transition: transform 0.3s;
-        }
-
-        .chart-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .chart-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-bottom: 2px solid var(--accent);
-        }
-
-        .card-content {
-            padding: 15px;
-        }
-
-        .comment {
-            margin-bottom: 10px;
-            color: rgba(255,255,255,0.8);
-        }
-
-        .timestamp {
-            font-size: 0.8em;
-            color: rgba(255,255,255,0.6);
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: #ff4757;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
+        /* Loading Spinner */
         .loading {
             display: none;
             position: fixed;
@@ -213,6 +148,8 @@
     </style>
 </head>
 <body>
+
+    <!-- Auth Section -->
     <div class="auth-container" id="authSection">
         <div class="auth-card">
             <h1>Trading Archive</h1>
@@ -226,15 +163,8 @@
         </div>
     </div>
 
+    <!-- App Content (Upload Section) -->
     <div class="container app-content" id="appContent">
-        <div class="header">
-            <h2>Chart Archive</h2>
-            <div class="user-info">
-                <span id="userEmail" style="margin-right: 15px;"></span>
-                <button onclick="logout()" class="logout-btn">Logout</button>
-            </div>
-        </div>
-
         <div class="upload-section">
             <h2>Upload New Chart</h2>
             <div class="file-input">
@@ -242,36 +172,94 @@
                 <label for="imageInput">Choose Chart Image</label>
             </div>
             <input type="text" id="commentInput" placeholder="Analysis comment...">
-            <button onclick="uploadChart()" class="upload-btn">Upload Chart</button>
+            <button onclick="uploadChart()">Upload Chart</button>
         </div>
-
         <div class="loading" id="loading">Loading...</div>
-        <div id="gallery" class="gallery"></div>
     </div>
 
     <script>
         // Supabase configuration
         const supabase = supabase.createClient(
-            'https://snykjjyexfcnsrpahxrc.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNueWtqanlleGZjbnNycGFoeHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMTEwNzksImV4cCI6MjA1Mzg4NzA3OX0.VfneGs7pY4XWot2kKGICCj2D0Tv-PS6zq_tbZaipB0E'
+            'YOUR_SUPABASE_URL', // Replace with your Supabase URL
+            'YOUR_SUPABASE_ANON_KEY' // Replace with your Supabase anon key
         );
 
-        // Auth state listener
+        // Show app content after login
         supabase.auth.onAuthStateChange((event, session) => {
             if (session?.user) {
                 document.getElementById('authSection').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
-                document.getElementById('userEmail').textContent = session.user.email;
-                loadSavedCharts();
             } else {
                 document.getElementById('authSection').style.display = 'flex';
                 document.getElementById('appContent').style.display = 'none';
             }
         });
 
-        // Keep existing JavaScript functions unchanged (uploadChart, loadSavedCharts, deleteChart, etc.)
-        // ... [Rest of your JavaScript code remains the same] ...
+        // Login function
+        async function login() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
 
+            if (!email || !password) {
+                alert("Please enter both email and password.");
+                return;
+            }
+
+            // Log in the user
+            const { user, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) {
+                alert('Login failed: ' + error.message);
+            } else {
+                // Show app content after login
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('appContent').style.display = 'block';
+            }
+        }
+
+        // Upload chart function
+        async function uploadChart() {
+            const fileInput = document.getElementById('imageInput');
+            const commentInput = document.getElementById('commentInput');
+
+            if (!fileInput.files[0] || !commentInput.value) {
+                alert("Please select a chart image and add a comment.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const fileName = `chart_${Date.now()}`;
+            
+            // Upload file to Supabase Storage (replace with your bucket)
+            const { data, error } = await supabase.storage
+                .from('charts')
+                .upload(fileName, file);
+
+            if (error) {
+                alert('Error uploading chart: ' + error.message);
+                return;
+            }
+
+            const { data: urlData } = await supabase
+                .storage
+                .from('charts')
+                .getPublicUrl(fileName);
+
+            const { error: insertError } = await supabase
+                .from('charts')
+                .insert([
+                    { image_url: urlData.publicURL, comment: commentInput.value }
+                ]);
+
+            if (insertError) {
+                alert('Error saving chart info: ' + insertError.message);
+            } else {
+                alert('Chart uploaded successfully!');
+            }
+        }
     </script>
 </body>
 </html>
