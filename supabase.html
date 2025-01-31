@@ -184,7 +184,7 @@
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNueWtqanlleGZjbnNycGFoeHJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgzMTEwNzksImV4cCI6MjA1Mzg4NzA3OX0.VfneGs7pY4XWot2kKGICCj2D0Tv-PS6zq_tbZaipB0E' // Replace with your Supabase anon key
         );
 
-        // Show app content after login
+        // Auth state listener
         supabase.auth.onAuthStateChange((event, session) => {
             if (session?.user) {
                 document.getElementById('authSection').style.display = 'none';
@@ -197,6 +197,7 @@
 
         // Login function
         async function login() {
+            const email = document.getElementById('emailInput').value;
             const password = document.getElementById('passwordInput').value;
 
             if (!email || !password) {
@@ -213,7 +214,7 @@
             if (error) {
                 alert('Login failed: ' + error.message);
             } else {
-                // Show app content after login
+                // Hide login form and show the app content
                 document.getElementById('authSection').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
             }
